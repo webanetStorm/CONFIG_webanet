@@ -1,3 +1,5 @@
+import xml.etree.ElementTree as ET
+from datetime import datetime
 import tarfile
 import os
 
@@ -7,6 +9,13 @@ class VirtualShell:
     def __init__(self):
         self.current_path = ''
         self.tar_path = 'webanet.tar'
+        self.log_path = 'log.xml'
+        self.log_element = ET.Element('session')
+
+    def log(self, command):
+        cmd = ET.SubElement(self.log_element, 'command')
+        cmd.text = command
+        ET.ElementTree(self.log_element).write(self.log_path)
 
     def ls(self, dir):
         current_dir = f'{self.current_path}/' if self.current_path else ''
@@ -15,6 +24,7 @@ class VirtualShell:
                 relative_item = item[len(current_dir):]
                 if '/' not in relative_item:
                     print(relative_item)
+        self.log(f'[{datetime.now()}]: ls в {self.current_path}')
 
     def cd(self, path, dir):
         if path == '/':
@@ -27,6 +37,7 @@ class VirtualShell:
                 self.current_path = new_path
             else:
                 throw(f'cd : Не удается найти путь "{self.current_path}/{new_path}", так как он не существует')
+        self.log(f'[{datetime.now()}]: cd в {self.current_path}')
 
     def du(self, dir, path='.'):
         total_size = 0
@@ -36,19 +47,23 @@ class VirtualShell:
                 with tarfile.open(self.tar_path, 'r') as tar:
                     total_size += tar.getmember(item).size
         print(f'{total_size} байт')
+        self.log(f'[{datetime.now()}]: du для {path}')
 
     def tree(self, dir):
         for item in dir:
             print(' ' * 4 * item.count('/') + os.path.basename(item))
+        self.log(f'[{datetime.now()}]: tree в {self.current_path}')
 
     def find(self, dir, name):
         found_items = [item for item in dir if name in item]
         for item in found_items:
             print(item)
+        self.log(f'[{datetime.now()}]: find в {self.current_path}')
 
 
 def throw(message):
-    print(f'\033[31m{message}\033[0m')
+    message = f'\033[31m{message}\033[0m'
+    print(message)
 
 def main():
     shell = VirtualShell()
@@ -64,6 +79,7 @@ def main():
             elif command[0] == 'du':
                 shell.du(tar.getnames(), command[1] if len(command) >= 2 else '.')
             elif command[0] == 'tree':
+                print(tar.getnames())
                 shell.tree(tar.getnames())
             elif command[0] == 'find':
                 shell.find(tar.getnames(), command[1])
