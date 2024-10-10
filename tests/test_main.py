@@ -1,12 +1,13 @@
 import unittest
 from unittest.mock import patch
 from main import VirtualShell
+import tarfile
 
 
 class TestVirtualShell(unittest.TestCase):
 
     def setUp(self):
-        self.shell = VirtualShell()
+        self.shell = VirtualShell('../webanet.tar', '../log.xml')
 
     @patch('xml.etree.ElementTree.ElementTree.write')
     def test_log(self, mock_write):
@@ -16,7 +17,7 @@ class TestVirtualShell(unittest.TestCase):
 
     @patch('main.print')
     def test_ls(self, mock_print):
-        self.shell.ls(['dir1', 'dir2', 'file1', 'file2'])
+        self.shell.ls(['dir1', 'dir2', 'file1', 'file2'], None)
         mock_print.assert_any_call('dir1')
         mock_print.assert_any_call('dir2')
         mock_print.assert_any_call('file1')
@@ -36,6 +37,12 @@ class TestVirtualShell(unittest.TestCase):
         self.shell.find(directory, 'file')
         mock_print.assert_any_call('dir1/dir2/file1')
         mock_print.assert_any_call('dir1/file2')
+
+    @patch('main.print')
+    def test_du(self, mock_print):
+        with tarfile.open(self.shell.tar_path, 'a') as tar:
+            self.shell.du(tar.getnames(), 'etc/config.conf')
+            mock_print.assert_any_call('28 байт')
 
 
 if __name__ == '__main__':

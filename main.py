@@ -1,15 +1,16 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime
+import argparse
 import tarfile
 import os
 
 
 class VirtualShell:
 
-    def __init__(self):
+    def __init__(self, tar_path, log_path):
         self.current_path = ''
-        self.tar_path = 'webanet.tar'
-        self.log_path = 'log.xml'
+        self.tar_path = tar_path
+        self.log_path = log_path
         self.log_element = ET.Element('session')
 
     def log(self, command):
@@ -17,8 +18,11 @@ class VirtualShell:
         cmd.text = command
         ET.ElementTree(self.log_element).write(self.log_path)
 
-    def ls(self, dir):
-        current_dir = f'{self.current_path}/' if self.current_path else ''
+    def ls(self, dir, path):
+        if path:
+            current_dir = f'{path}/'
+        else:
+            current_dir = f'{self.current_path}/' if self.current_path else ''
         for item in dir:
             if item.startswith(current_dir) and item != current_dir:
                 relative_item = item[len(current_dir):]
@@ -66,14 +70,20 @@ def throw(message):
     print(message)
 
 def main():
-    shell = VirtualShell()
+    parser = argparse.ArgumentParser(description="VirtualShell CLI")
+    parser.add_argument('--tar_path', type=str, required=True, help="Путь к tar архиву виртуальной файловой системы")
+    parser.add_argument('--log_path', type=str, required=True, help="Путь к лог-файлу")
+    args = parser.parse_args()
+
+    shell = VirtualShell(args.tar_path, args.log_path)
+
     with tarfile.open('webanet.tar', 'a') as tar:
         while True:
             command = input(f'\033[36m{shell.current_path}> \033[0m').strip().split()
             if command[0] == 'exit':
                 break
             elif command[0] == 'ls':
-                shell.ls(tar.getnames())
+                shell.ls(tar.getnames(), command[1] if len(command) > 1 else None)
             elif command[0] == 'cd' and len(command) >= 2:
                 shell.cd(command[1], tar.getnames())
             elif command[0] == 'du':
