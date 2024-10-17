@@ -46,10 +46,16 @@ class VirtualShell:
     def du(self, dir, path='.'):
         total_size = 0
         path = f'{self.current_path}/{path}' if self.current_path else path
-        for item in dir:
-            if item.startswith(path):
-                with tarfile.open(self.tar_path, 'r') as tar:
-                    total_size += tar.getmember(item).size
+
+        with tarfile.open(self.tar_path, 'r') as tar:
+            for item in dir:
+                full_path = f'{path}/' if not path.endswith('/') else path
+                if item.startswith(full_path) and not item.endswith('/'):
+                    try:
+                        total_size += tar.getmember(item).size
+                    except KeyError:
+                        pass
+
         print(f'{total_size} байт')
         self.log(f'[{datetime.now()}]: du для {path}')
 
@@ -89,7 +95,6 @@ def main():
             elif command[0] == 'du':
                 shell.du(tar.getnames(), command[1] if len(command) >= 2 else '.')
             elif command[0] == 'tree':
-                print(tar.getnames())
                 shell.tree(tar.getnames())
             elif command[0] == 'find':
                 shell.find(tar.getnames(), command[1])
