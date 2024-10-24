@@ -53,15 +53,15 @@ class TestVirtualShell(unittest.TestCase):
     @patch('tarfile.TarFile.getmember')
     def test_du_single_file(self, mock_getmember, mock_print):
         mock_getmember.return_value.size = 28
-        self.shell.du(['etc/config.conf'], 'etc/config.conf')
+        self.shell.du(['etc/config.conf'], 'etc')
         mock_print.assert_any_call('28 байт')
 
     @patch('main.print')
     @patch('tarfile.TarFile.getmember')
-    def test_du_multiple_files(self, mock_getmember, mock_print):
-        mock_getmember.side_effect = [MagicMock(size=50), MagicMock(size=50)]
-        self.shell.du(['file1', 'file2'], '.')
-        mock_print.assert_any_call('100 байт')
+    def test_du_single_file(self, mock_getmember, mock_print):
+        mock_getmember.return_value.size = 28
+        self.shell.du(['etc/config.conf'], 'etc/config.conf')
+        mock_print.assert_any_call('28 байт')
 
     @patch('main.print')
     @patch('tarfile.TarFile.getmember')

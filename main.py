@@ -48,13 +48,16 @@ class VirtualShell:
         path = f'{self.current_path}/{path}' if self.current_path else path
 
         with tarfile.open(self.tar_path, 'r') as tar:
-            for item in dir:
-                full_path = f'{path}/' if not path.endswith('/') else path
-                if item.startswith(full_path) and not item.endswith('/'):
-                    try:
-                        total_size += tar.getmember(item).size
-                    except KeyError:
-                        pass
+            if path in dir and not path.endswith('/'):
+                total_size += tar.getmember(path).size
+            else:
+                for item in dir:
+                    full_path = f'{path}/' if not path.endswith('/') else path
+                    if item.startswith(full_path) and not item.endswith('/'):
+                        try:
+                            total_size += tar.getmember(item).size
+                        except KeyError:
+                            pass
 
         print(f'{total_size} байт')
         self.log(f'[{datetime.now()}]: du для {path}')
